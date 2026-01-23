@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  SUSPENDED
+}
+
+enum WalletStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+}
+
+enum TransactionStatus {
+  CREATED
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum TransactionType {
+  FUNDING
+  P2P_SEND
+  P2P_RECEIVE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String      @id @default(uuid())
+  keycloakId    String      @unique @map("keycloak_id")
+  email         String      @unique
+  handle        String      @unique
+  role          Role        @default(USER)
+  status        UserStatus  @default(ACTIVE)
+  
+  wallet        Wallet?
+  sentTransactions     Transaction[] @relation("SenderTransactions")
+  receivedTransactions Transaction[] @relation("ReceiverTransactions")
+  auditLogs     AuditLog[]
+  
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  
+  @@index([keycloakId])
+  @@index([handle])
+  @@index([email])
+  @@map("users")
+}
+
+model Wallet {
+  id                String        @id @default(uuid())
+  userId            String        @unique @map("user_id")
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  stellarPublicKey  String        @unique @map("stellar_public_key")
+  stellarSecretKey  String        @map("stellar_secret_key") // Encrypted
+  encryptionIV      String        @map("encryption_iv") // Initialization vector for AES
+  
+  balance           Decimal       @default(0) @db.Decimal(20, 7)
+  status            WalletStatus  @default(ACTIVE)
+  
+  lastFundedAt      DateTime?     @map("last_funded_at")
+  fundingCount      Int           @default(0) @map("funding_count")
+  dailyFundingSum   Decimal       @default(0) @db.Decimal(20, 7) @map("daily_funding_sum")
+  lastResetDate     DateTime      @default(now()) @map("last_reset_date")
+  
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  
+  @@index([stellarPublicKey])
+  @@index([userId])
+  @@map("wallets")
+}
+
+model Transaction {
+  id                String            @id @default(uuid())
+  
+  senderId          String            @map("sender_id")
+  sender            User              @relation("SenderTransactions", fields: [senderId], references: [id])
+  
+  receiverId        String            @map("receiver_id")
+  receiver          User              @relation("ReceiverTransactions", fields: [receiverId], references: [id])
+  
+  amount            Decimal           @db.Decimal(20, 7)
+  type              TransactionType   @default(P2P_SEND)
+  status            TransactionStatus @default(CREATED)
+  
+  stellarTxHash     String?           @unique @map("stellar_tx_hash")
+  stellarLedger     Int?              @map("stellar_ledger")
+  
+  idempotencyKey    String?           @unique @map("idempotency_key")
+  
+  failureReason     String?           @map("failure_reason")
+  retryCount        Int               @default(0) @map("retry_count")
+  
+  metadata          Json?             // Store additional context
+  
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  completedAt       DateTime?         @map("completed_at")
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([stellarTxHash])
+  @@map("transactions")
+}
+
+model SystemConfig {
+  id                    String   @id @default(uuid())
+  key                   String   @unique
+  value                 String
+  description           String?
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@map("system_config")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  
+  userId        String?  @map("user_id")
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  action        String
+  resource      String
+  resourceId    String?  @map("resource_id")
+  
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  
+  metadata      Json?
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model DistributedLock {
+  id            String   @id
+  acquiredBy    String   @map("acquired_by")
+  expiresAt     DateTime @map("expires_at")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@index([expiresAt])
+  @@map("distributed_locks")
+}
