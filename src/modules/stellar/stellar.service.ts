@@ -1,6 +1,5 @@
 import {
   Keypair,
-  Server,
   Networks,
   TransactionBuilder,
   BASE_FEE,
@@ -10,6 +9,7 @@ import {
   Account,
   Horizon,
 } from "stellar-sdk";
+import { Server } from "stellar-sdk/lib/horizon";
 import { config } from "../../config";
 import { StellarError, InternalServerError } from "../../utils/errors";
 
@@ -137,10 +137,13 @@ export class StellarService {
       if (error instanceof Error) {
         // Parse Stellar error details
         if ("response" in error) {
-          const horizonError = error as Horizon.HorizonApi.ErrorResponseData;
+          // const horizonError = error as Horizon.HorizonApi.ErrorResponseData;
+          const horizonError =
+            error as unknown as Horizon.HorizonApi.ErrorResponseData;
+
           throw new StellarError("Stellar transaction failed", {
             error: error.message,
-            extras: horizonError.extras,
+            // extras: horizonError.extras,
           });
         }
         throw new StellarError("Payment failed", { error: error.message });
