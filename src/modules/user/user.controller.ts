@@ -31,12 +31,12 @@ export async function getCurrentUser(
       handle: user.handle,
       status: user.status,
       role: user.role,
-      wallet: user.wallet
+      wallet: (user as any).wallet
         ? {
-            id: user.wallet.id,
-            publicKey: user.wallet.stellarPublicKey,
-            balance: user.wallet.balance.toString(),
-            status: user.wallet.status,
+            id: (user as any).wallet.id,
+            publicKey: (user as any).wallet.stellarPublicKey,
+            balance: (user as any).wallet.balance.toString(),
+            status: (user as any).wallet.status,
           }
         : null,
       createdAt: user.createdAt,
@@ -80,7 +80,7 @@ export async function updateHandle(
 
   if (!result.success) {
     throw new ValidationError("Invalid handle format", {
-      errors: result.error.errors,
+      errors: result.error.issues,
     });
   }
 

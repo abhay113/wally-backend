@@ -18,6 +18,9 @@ export async function getBalance(request: FastifyRequest, reply: FastifyReply) {
       balance: balanceInfo.balance,
       stellarBalance: balanceInfo.stellarBalance,
       synced: balanceInfo.synced,
+      message: balanceInfo.synced
+        ? "Balance is in sync with blockchain"
+        : "Balance may be out of sync. Try syncing.",
     },
   });
 }
@@ -31,12 +34,15 @@ export async function fundWallet(request: FastifyRequest, reply: FastifyReply) {
 
   return reply.send({
     success: true,
-    data: result,
+    data: {
+      balance: result.balance,
+      message: result.message,
+    },
   });
 }
 
 /**
- * Sync wallet balance with Stellar
+ * Sync wallet balance with Stellar network
  */
 export async function syncBalance(
   request: FastifyRequest,
@@ -50,6 +56,7 @@ export async function syncBalance(
     success: true,
     data: {
       balance,
+      message: "Balance synced successfully",
     },
   });
 }

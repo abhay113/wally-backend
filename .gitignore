@@ -45,3 +45,5 @@ coverage/
 *.key
 .cache/
 /src/generated/prisma
+
+API.md
