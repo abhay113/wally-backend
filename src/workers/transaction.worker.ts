@@ -6,7 +6,15 @@ import { stellarService } from "../modules/stellar/stellar.service";
 import { WalletService } from "../modules/wallet/wallet.service";
 import { TransactionService } from "../modules/transaction/transaction.service";
 
-const prisma = new PrismaClient();
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({ adapter });
+
 const walletService = new WalletService();
 const transactionService = new TransactionService();
 

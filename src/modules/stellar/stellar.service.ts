@@ -6,21 +6,23 @@ import {
   Operation,
   Asset,
   Memo,
-  Account,
-  Horizon,
+  Horizon, // Horizon contains the Server class in v13+
 } from "stellar-sdk";
-import { Server } from "stellar-sdk/lib/horizon";
+
 import { config } from "../../config";
-import { StellarError, InternalServerError } from "../../utils/errors";
+import { StellarError } from "../../utils/errors";
 
 export class StellarService {
-  private server: Server;
+  private server: Horizon.Server; // Explicitly typed for Horizon
   private networkPassphrase: string;
 
   constructor() {
-    this.server = new Server(config.stellar.horizonUrl);
+    // In v13, Server is a named export or accessed via Horizon
+    this.server = new Horizon.Server(config.stellar.horizonUrl);
+
     this.networkPassphrase =
       config.stellar.network === "testnet" ? Networks.TESTNET : Networks.PUBLIC;
+
     console.log(`✓ Stellar service initialized (${config.stellar.network})`);
   }
 
@@ -54,7 +56,6 @@ export class StellarService {
         );
       }
     } catch (error) {
-      if (error instanceof StellarError) throw error;
       throw new StellarError("Failed to fund account with Friendbot", {
         error: error instanceof Error ? error.message : String(error),
       });
@@ -68,26 +69,21 @@ export class StellarService {
     try {
       const account = await this.server.loadAccount(publicKey);
       const nativeBalance = account.balances.find(
-        (balance) => balance.asset_type === "native",
+        (balance: any) => balance.asset_type === "native",
       );
 
       return nativeBalance?.balance || "0";
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes("Request failed with status code 404")
-      ) {
+    } catch (error: any) {
+      // Modern way to check for 404 in Stellar SDK
+      if (error.response?.status === 404) {
         return "0";
       }
-      throw new StellarError("Failed to get account balance", {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      throw new StellarError("Failed to get account balance");
     }
   }
 
   /**
    * Sends payment from one account to another
-   * Returns transaction hash on success
    */
   async sendPayment(params: {
     fromSecretKey: string;
@@ -99,12 +95,10 @@ export class StellarService {
 
     try {
       const sourceKeypair = Keypair.fromSecret(fromSecretKey);
-      const sourcePublicKey = sourceKeypair.publicKey();
+      const sourceAccount = await this.server.loadAccount(
+        sourceKeypair.publicKey(),
+      );
 
-      // Load source account
-      const sourceAccount = await this.server.loadAccount(sourcePublicKey);
-
-      // Build transaction
       const transaction = new TransactionBuilder(sourceAccount, {
         fee: BASE_FEE,
         networkPassphrase: this.networkPassphrase,
@@ -118,7 +112,6 @@ export class StellarService {
         )
         .setTimeout(30);
 
-      // Add memo if provided (used for linking to internal transaction ID)
       if (memo) {
         transaction.addMemo(Memo.text(memo));
       }
@@ -126,97 +119,29 @@ export class StellarService {
       const builtTransaction = transaction.build();
       builtTransaction.sign(sourceKeypair);
 
-      // Submit transaction
       const result = await this.server.submitTransaction(builtTransaction);
 
       return {
         hash: result.hash,
         ledger: result.ledger,
       };
-    } catch (error) {
-      if (error instanceof Error) {
-        // Parse Stellar error details
-        if ("response" in error) {
-          // const horizonError = error as Horizon.HorizonApi.ErrorResponseData;
-          const horizonError =
-            error as unknown as Horizon.HorizonApi.ErrorResponseData;
-
-          throw new StellarError("Stellar transaction failed", {
-            error: error.message,
-            // extras: horizonError.extras,
-          });
-        }
-        throw new StellarError("Payment failed", { error: error.message });
-      }
-      throw new StellarError("Unknown payment error");
+    } catch (error: any) {
+      // Latest error parsing for Horizon
+      const detail =
+        error.response?.data?.extras?.result_codes?.operations?.[0] ||
+        error.message;
+      throw new StellarError(`Payment failed: ${detail}`);
     }
   }
 
   /**
-   * Gets transaction details by hash
-   */
-  async getTransaction(
-    hash: string,
-  ): Promise<Horizon.ServerApi.TransactionRecord | null> {
-    try {
-      const transaction = await this.server
-        .transactions()
-        .transaction(hash)
-        .call();
-      return transaction;
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes("Request failed with status code 404")
-      ) {
-        return null;
-      }
-      throw new StellarError("Failed to get transaction", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-
-  /**
-   * Validates if an account exists on the network
-   */
-  async accountExists(publicKey: string): Promise<boolean> {
-    try {
-      await this.server.loadAccount(publicKey);
-      return true;
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes("Request failed with status code 404")
-      ) {
-        return false;
-      }
-      throw new StellarError("Failed to check account existence", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-
-  /**
-   * Validates Stellar public key format
-   */
-  isValidPublicKey(publicKey: string): boolean {
-    try {
-      Keypair.fromPublicKey(publicKey);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Stream payments to an account (for monitoring incoming transactions)
+   * Stream payments (for monitoring wallet-engine)
    */
   streamPayments(
     publicKey: string,
     onPayment: (payment: Horizon.ServerApi.PaymentOperationRecord) => void,
   ): () => void {
-    const stream = this.server
+    const closeStream = this.server
       .payments()
       .forAccount(publicKey)
       .cursor("now")
@@ -227,11 +152,11 @@ export class StellarService {
           }
         },
         onerror: (error) => {
-          console.error("Payment stream error:", error);
+          console.error("Stellar Stream Error:", error);
         },
       });
 
-    return () => stream();
+    return closeStream;
   }
 }
 

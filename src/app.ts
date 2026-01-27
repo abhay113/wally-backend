@@ -39,14 +39,15 @@ async function registerPlugins() {
 
   // CORS
   await fastify.register(cors, {
-    origin: config.isDevelopment ? "*" : process.env.ALLOWED_ORIGINS?.split(","),
+    origin: config.isDevelopment
+      ? "*"
+      : process.env.ALLOWED_ORIGINS?.split(","),
     credentials: true,
   });
-
 }
 
 // Error handler
-fastify.setErrorHandler((error, request, reply) => {
+fastify.setErrorHandler((error, _request, reply) => {
   if (error instanceof AppError) {
     return reply.status(error.httpStatus).send({
       success: false,
@@ -76,8 +77,8 @@ fastify.setErrorHandler((error, request, reply) => {
 async function registerRoutes() {
   // Health check (public)
   fastify.get("/health", async () => {
-    return { 
-      status: "ok", 
+    return {
+      status: "ok",
       timestamp: new Date().toISOString(),
       environment: config.env,
     };
@@ -96,7 +97,7 @@ async function registerRoutes() {
           userRoutes.get("/:handle", userController.getUserByHandle);
           userRoutes.patch("/handle", userController.updateHandle);
         },
-        { prefix: "/users" }
+        { prefix: "/users" },
       );
 
       // Wallet routes
@@ -109,7 +110,7 @@ async function registerRoutes() {
           walletRoutes.post("/fund", walletController.fundWallet);
           walletRoutes.post("/sync", walletController.syncBalance);
         },
-        { prefix: "/wallet" }
+        { prefix: "/wallet" },
       );
 
       // Transaction routes
@@ -122,7 +123,7 @@ async function registerRoutes() {
           txRoutes.get("/history", transactionController.getTransactionHistory);
           txRoutes.get("/:id", transactionController.getTransaction);
         },
-        { prefix: "/transactions" }
+        { prefix: "/transactions" },
       );
 
       // Admin routes
@@ -132,15 +133,21 @@ async function registerRoutes() {
           adminRoutes.addHook("onRequest", requireAdmin);
 
           adminRoutes.get("/users", adminController.listUsers);
-          adminRoutes.patch("/users/:userId/status", adminController.updateUserStatus);
-          adminRoutes.patch("/wallets/:walletId/status", adminController.updateWalletStatus);
+          adminRoutes.patch(
+            "/users/:userId/status",
+            adminController.updateUserStatus,
+          );
+          adminRoutes.patch(
+            "/wallets/:walletId/status",
+            adminController.updateWalletStatus,
+          );
           adminRoutes.get("/statistics", adminController.getStatistics);
           adminRoutes.get("/overview", adminController.getSystemOverview);
         },
-        { prefix: "/admin" }
+        { prefix: "/admin" },
       );
     },
-    { prefix: "/api/v1" }
+    { prefix: "/api/v1" },
   );
 }
 

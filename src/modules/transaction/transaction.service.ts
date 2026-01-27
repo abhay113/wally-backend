@@ -1,10 +1,4 @@
-import {
-  PrismaClient,
-  Transaction,
-  TransactionStatus,
-  TransactionType,
-  Prisma,
-} from "@prisma/client";
+import { Transaction, TransactionStatus, Prisma } from "@prisma/client";
 import { transactionQueue } from "./transaction.queue";
 import { config } from "../../config";
 import { WalletService } from "../wallet/wallet.service";
@@ -17,8 +11,7 @@ import {
   ValidationError,
   LimitExceededError,
 } from "../../utils/errors";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../utils/prisma";
 
 export class TransactionService {
   private walletService: WalletService;

@@ -45,7 +45,7 @@ const JWKS = createRemoteJWKSet(
  */
 export async function authenticateJWT(
   request: FastifyRequest,
-  reply: FastifyReply,
+  _reply: FastifyReply,
 ) {
   const authHeader = request.headers.authorization;
 
@@ -98,7 +98,7 @@ export async function authenticateJWT(
  * Checks if user has at least one of the required roles
  */
 export function requireRole(...requiredRoles: string[]) {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
+  return async (request: FastifyRequest, _reply: FastifyReply) => {
     if (!request.user) {
       throw new UnauthorizedError("User not authenticated");
     }
