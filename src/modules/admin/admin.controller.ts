@@ -201,7 +201,7 @@ export async function getStatistics(
  * Get system overview (admin only)
  */
 export async function getSystemOverview(
-  request: FastifyRequest,
+  _request: FastifyRequest,
   reply: FastifyReply,
 ) {
   const overview = await adminService.getSystemOverview();

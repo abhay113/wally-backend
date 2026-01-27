@@ -1,4 +1,4 @@
-import { PrismaClient, User, UserStatus } from "@prisma/client";
+import { User, UserStatus } from "@prisma/client";
 import {
   NotFoundError,
   DuplicateHandleError,
@@ -6,7 +6,7 @@ import {
 } from "../../utils/errors";
 import { WalletService } from "../wallet/wallet.service";
 
-const prisma = new PrismaClient();
+import { prisma } from "../../utils/prisma";
 
 export class UserService {
   private walletService: WalletService;

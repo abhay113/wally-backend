@@ -1,4 +1,4 @@
-import { PrismaClient, Wallet, WalletStatus, Prisma } from "@prisma/client";
+import { Wallet, WalletStatus, Prisma } from "@prisma/client";
 import { stellarService } from "../stellar/stellar.service";
 import { encryptSecretKey, decryptSecretKey } from "./wallet.crypto";
 import {
@@ -10,7 +10,7 @@ import {
 } from "../../utils/errors";
 import { config } from "../../config";
 
-const prisma = new PrismaClient();
+import { prisma } from "../../utils/prisma";
 
 export class WalletService {
   /**
