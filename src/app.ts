@@ -10,6 +10,7 @@ import {
 } from "./middleware/auth.middleware";
 
 // Import controllers
+import * as authController from "./modules/auth/auth.controller";
 import * as userController from "./modules/user/user.controller";
 import * as walletController from "./modules/wallet/wallet.controller";
 import * as transactionController from "./modules/transaction/transaction.controller";
@@ -83,6 +84,18 @@ async function registerRoutes() {
       environment: config.env,
     };
   });
+
+  // Public auth routes (no authentication required)
+
+  fastify.register(
+    async (auth) => {
+      auth.post("/register", authController.register);
+      auth.post("/login", authController.login);
+      auth.post("/refresh", authController.refreshToken);
+      auth.post("/logout", authController.logout);
+    },
+    { prefix: "/api/v1/auth" },
+  );
 
   // API v1 routes
   fastify.register(
