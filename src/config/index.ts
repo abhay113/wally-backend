@@ -34,6 +34,8 @@ export const config = {
     authServerUrl: process.env.KEYCLOAK_AUTH_SERVER_URL!,
     clientId: process.env.KEYCLOAK_CLIENT_ID!,
     clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
+    adminUsername: process.env.KEYCLOAK_ADMIN_USERNAME!,
+    adminPassword: process.env.KEYCLOAK_ADMIN_PASSWORD!,
   },
 
   encryption: {
