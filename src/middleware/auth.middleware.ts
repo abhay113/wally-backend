@@ -59,7 +59,7 @@ export async function authenticateJWT(
     // Verify JWT signature and validate claims
     const { payload } = await jwtVerify(token, JWKS, {
       issuer: `${config.keycloak.authServerUrl}/realms/${config.keycloak.realm}`,
-      audience: config.keycloak.clientId,
+      audience: ["account", config.keycloak.clientId],
     });
 
     const jwtPayload = payload as unknown as JWTPayload;

@@ -18,25 +18,25 @@ export class AuthService {
   private async getAdminToken(): Promise<string> {
     try {
       const response = await axios.post(
-        `${config.keycloak.authServerUrl}/realms/master/protocol/openid-connect/token`,
+        `${config.keycloak.authServerUrl}/realms/${config.keycloak.realm}/protocol/openid-connect/token`,
         new URLSearchParams({
+          grant_type: "client_credentials",
           client_id: config.keycloak.clientId,
-          username: config.keycloak.adminUsername, // Should be from config in production
-          password: config.keycloak.adminPassword, // Should be from config in production
-          grant_type: "password",
+          client_secret: config.keycloak.clientSecret,
         }),
         {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       return response.data.access_token;
-    } catch (error) {
-      throw new InternalServerError("Failed to get Keycloak admin token", {
-        error: error instanceof Error ? error.message : String(error),
-      });
+    } catch (error: any) {
+      console.log("STATUS:", error.response?.status);
+      console.log("DATA:", error.response?.data);
+      console.log("HEADERS:", error.response?.headers);
+      throw error;
     }
   }
 
@@ -47,11 +47,13 @@ export class AuthService {
     email: string;
     password: string;
     handle: string;
+    firstName?: string;
+    lastName?: string;
   }): Promise<{
     success: boolean;
     message: string;
   }> {
-    const { email, password, handle } = params;
+    const { email, password, handle, firstName, lastName } = params;
 
     // Validate input
     if (!email || !password || !handle) {
@@ -84,6 +86,8 @@ export class AuthService {
         {
           username: handle,
           email,
+          firstName: firstName || "Default", // Use handle as default if not provided
+          lastName: lastName || "User", // Default to if not provided
           enabled: true,
           emailVerified: false, // Can add email verification flow later
           credentials: [
@@ -99,7 +103,7 @@ export class AuthService {
             Authorization: `Bearer ${adminToken}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       // Extract Keycloak user ID from Location header
@@ -148,7 +152,7 @@ export class AuthService {
   private async assignRoleToUser(
     userId: string,
     roleName: string,
-    adminToken: string
+    adminToken: string,
   ): Promise<void> {
     try {
       // Get role ID
@@ -158,7 +162,7 @@ export class AuthService {
           headers: {
             Authorization: `Bearer ${adminToken}`,
           },
-        }
+        },
       );
 
       const role = rolesResponse.data.find((r: any) => r.name === roleName);
@@ -177,7 +181,7 @@ export class AuthService {
             Authorization: `Bearer ${adminToken}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       console.log(`✓ Assigned role "${roleName}" to user ${userId}`);
@@ -190,10 +194,7 @@ export class AuthService {
   /**
    * Login user and get JWT token
    */
-  async login(params: {
-    email: string;
-    password: string;
-  }): Promise<{
+  async login(params: { email: string; password: string }): Promise<{
     success: boolean;
     token: string;
     refreshToken: string;
@@ -219,7 +220,7 @@ export class AuthService {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       console.log(`✓ User logged in: ${email}`);
@@ -231,6 +232,7 @@ export class AuthService {
         expiresIn: response.data.expires_in,
       };
     } catch (error: any) {
+      console.error("Login failed:", error.response?.data || error.message);
       if (error.response?.status === 401) {
         throw new UnauthorizedError("Invalid email or password");
       }
@@ -263,7 +265,7 @@ export class AuthService {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       return {
@@ -299,7 +301,7 @@ export class AuthService {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       return { success: true };
