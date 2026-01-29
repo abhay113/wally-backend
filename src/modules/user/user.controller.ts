@@ -21,6 +21,7 @@ export async function getCurrentUser(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  console.log("user controller", request.user);
   const user = await userService.getUserByKeycloakId(request.user.keycloakId);
 
   return reply.send({

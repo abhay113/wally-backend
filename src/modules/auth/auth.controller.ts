@@ -48,6 +48,8 @@ export async function register(
       email: string;
       password: string;
       handle: string;
+      firstName?: string;
+      lastName?: string;
     };
   }>,
   reply: FastifyReply,
@@ -85,9 +87,10 @@ export async function login(
       errors: result.error.issues,
     });
   }
-
+  console.log("result.data: in login controller", result.data);
   const response = await authService.login(result.data);
 
+  console.log("respone: in login controller", response);
   return reply.send(response);
 }
 
