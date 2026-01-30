@@ -48,6 +48,7 @@ export async function syncBalance(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  console.log("request body in sync balance controller", request);
   const user = await userService.getUserByKeycloakId(request.user.keycloakId);
   const wallet = await walletService.getWalletByUserId(user.id);
   const balance = await walletService.syncBalance(wallet.id);

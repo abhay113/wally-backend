@@ -113,7 +113,9 @@ export class StellarService {
         .setTimeout(30);
 
       if (memo) {
-        transaction.addMemo(Memo.text(memo));
+        // transaction.addMemo(Memo.text(memo));
+        const memoText = memo.length > 28 ? memo.substring(0, 28) : memo;
+        transaction.addMemo(Memo.text(memoText));
       }
 
       const builtTransaction = transaction.build();

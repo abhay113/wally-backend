@@ -222,11 +222,15 @@ export class WalletService {
     synced: boolean;
   }> {
     const wallet = await this.getWalletByUserId(userId);
-    const stellarBalance = await stellarService.getBalance(
+    let stellarBalance = await stellarService.getBalance(
       wallet.stellarPublicKey,
     );
+    console.log("stellar balance", stellarBalance);
 
-    const dbBalance = wallet.balance.toString();
+    const dbBalance = parseFloat(wallet.balance.toString()).toFixed(7);
+    stellarBalance = parseFloat(stellarBalance).toFixed(7);
+    console.log("stellar balance after sync", stellarBalance);
+
     const synced = dbBalance === stellarBalance;
     if (!synced) {
       console.log(
