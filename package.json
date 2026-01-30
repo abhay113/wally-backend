@@ -6,9 +6,15 @@
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "tsx watch src/server.ts",
+    "worker": "tsx watch src/workers/transaction.worker.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:reset": "prisma migrate reset",
+    "generate:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
   },
   "keywords": [],
   "author": "",
