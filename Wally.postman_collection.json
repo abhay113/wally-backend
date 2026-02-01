@@ -1,0 +1,688 @@
+{
+  "info": {
+    "_postman_id": "75105bb3-da2d-4c25-a319-7851012fed38",
+    "name": "Wally",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51568363",
+    "_collection_link": "https://go.postman.co/collection/51568363-75105bb3-da2d-4c25-a319-7851012fed38?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse JSON response\r",
+                  "let jsonData;\r",
+                  "\r",
+                  "try {\r",
+                  "    jsonData = pm.response.json();\r",
+                  "} catch (e) {\r",
+                  "    pm.test('Response is JSON', function () {\r",
+                  "        pm.expect.fail('Response is not valid JSON');\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Basic check\r",
+                  "pm.test('Token request succeeded', function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "// Save the access token to env variable \"token\"\r",
+                  "if (jsonData && jsonData.token) {\r",
+                  "    pm.environment.set('token', jsonData.token);\r",
+                  "} else {\r",
+                  "    console.warn('No token field found in response');\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Get request body as JSON\r",
+                  "const reqBody = pm.request.body.raw ? JSON.parse(pm.request.body.raw) : {};\r",
+                  "\r",
+                  "// Save to environment variables\r",
+                  "if (reqBody.email) {\r",
+                  "    pm.environment.set(\"email\", reqBody.email);\r",
+                  "}\r",
+                  "\r",
+                  "if (reqBody.password) {\r",
+                  "    pm.environment.set(\"password\", reqBody.password);\r",
+                  "}\r",
+                  "\r",
+                  "if (reqBody.handle) {\r",
+                  "    pm.environment.set(\"username\", reqBody.handle);\r",
+                  "}\r",
+                  "\r",
+                  "\r",
+                  "// Optional: basic success check\r",
+                  "pm.test(\"Register request succeeded\", function () {\r",
+                  "    pm.response.to.have.status(201); // adjust if your API returns 200\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"abhaychavan113@gmail.com\",\n    \"password\": \"Abhay@2002\",\n    \"handle\": \"abhay113\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse JSON response\r",
+                  "let jsonData;\r",
+                  "\r",
+                  "try {\r",
+                  "    jsonData = pm.response.json();\r",
+                  "} catch (e) {\r",
+                  "    console.error('Response is not valid JSON:', e);\r",
+                  "    pm.test('Response is JSON', function () {\r",
+                  "        pm.expect.fail('Response is not valid JSON');\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  "// Basic check\r",
+                  "pm.test('Token request succeeded', function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "// Save the access token to env variable \"token\"\r",
+                  "if (jsonData && jsonData.access_token) {\r",
+                  "    pm.environment.set('token', jsonData.access_token);\r",
+                  "    console.log('Access token saved to env as {{token}}');\r",
+                  "} else {\r",
+                  "    console.warn('No access_token field found in response');\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "type": "text",
+                  "key": "client_id",
+                  "value": "wally-backend"
+                },
+                {
+                  "type": "text",
+                  "key": "client_secret",
+                  "value": "QcfG6cgk7Bc7C24lctOoApe9yhlXmJ6M"
+                },
+                {
+                  "type": "text",
+                  "key": "username",
+                  "value": "alice"
+                },
+                {
+                  "type": "text",
+                  "key": "password",
+                  "value": "1234"
+                },
+                {
+                  "type": "text",
+                  "key": "grant_type",
+                  "value": "password"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/realms/wally/protocol/openid-connect/token",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "realms",
+                "wally",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        {
+          "name": "get_balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/wallet/balance",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "wallet",
+                "balance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "fund_wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/wallet/fund",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "wallet",
+                "fund"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "sync_balance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/wallet/sync",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "wallet",
+                "sync"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "get_current_user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/users/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update_handle",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"handle\":\"alice_new\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/users/handle",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "handle"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_user_by_handle",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transaction",
+      "item": [
+        {
+          "name": "send_payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse JSON response\r",
+                  "let res = pm.response.json();\r",
+                  "\r",
+                  "// Safely get transactionId\r",
+                  "if (res && res.data && res.data.transactionId) {\r",
+                  "    pm.environment.set(\"tx_id\", res.data.transactionId);\r",
+                  "    console.log(\"tx_id saved:\", res.data.transactionId);\r",
+                  "} else {\r",
+                  "    console.warn(\"transactionId not found in response:\", res);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"recipientHandle\": \"abhay005\",\n    \"amount\": \"4\",\n    \"idempotencyKey\": \"test-04\",\n    \"memo\": \"dev testing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/transactions/send",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "send"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_payment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/transactions/{{tx_id}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "{{tx_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/transactions/history?page=1&limit=10",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "get_all_users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/users?page=1&limit=10",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "block_user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"BLOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/users/{userId}/status",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get_status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/statistics",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "statistics"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "Token",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}
