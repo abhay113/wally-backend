@@ -1,4 +1,4 @@
-import { Transaction, TransactionStatus, Prisma } from "@prisma/client";
+import { Transaction, TransactionStatus, Prisma } from "../../generated/client";
 import { transactionQueue } from "./transaction.queue";
 import { config } from "../../config";
 import { WalletService } from "../wallet/wallet.service";

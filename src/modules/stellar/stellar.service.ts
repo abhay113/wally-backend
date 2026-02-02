@@ -7,7 +7,7 @@ import {
   Asset,
   Memo,
   Horizon, // Horizon contains the Server class in v13+
-} from "stellar-sdk";
+} from "@stellar/stellar-sdk";
 
 import { config } from "../../config";
 import { StellarError } from "../../utils/errors";
@@ -50,13 +50,14 @@ export class StellarService {
         `${config.stellar.friendbotUrl}?addr=${encodeURIComponent(publicKey)}`,
       );
 
+      console.log("response from stellar service Api",response);
       if (!response.ok) {
         throw new StellarError(
           `Friendbot funding failed: ${response.statusText}`,
         );
       }
     } catch (error) {
-      throw new StellarError("Failed to fund account with Friendbot", {
+      throw new StellarError("Failed to fund account with Friendbot getting from stellar service", {
         error: error instanceof Error ? error.message : String(error),
       });
     }
