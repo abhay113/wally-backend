@@ -1,4 +1,4 @@
-import { Wallet, WalletStatus, Prisma } from "@prisma/client";
+import { Wallet, WalletStatus, Prisma } from "../../generated/client";
 import { stellarService } from "../stellar/stellar.service";
 import { encryptSecretKey, decryptSecretKey } from "./wallet.crypto";
 import {
