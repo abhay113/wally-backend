@@ -141,6 +141,7 @@ export async function getTransactionHistory(
 
   const user = await userService.getUserByKeycloakId(request.user.keycloakId);
 
+  // Fetch from DB
   const { transactions, total } =
     await transactionService.getTransactionHistory({
       userId: user.id,
@@ -149,10 +150,23 @@ export async function getTransactionHistory(
       status: result.data.status,
     });
 
+  // --- NEW FILTERING LOGIC START ---
+  const visibleTransactions = transactions.filter((tx) => {
+    // 1. If current user is the Sender, show everything (Sent Success, Sent Failed, etc.)
+    if (tx.senderId === user.id) {
+      return true;
+    }
+
+    // 2. If current user is the Receiver, ONLY show if status is SUCCESS
+    return tx.status === "SUCCESS";
+  });
+  // --- NEW FILTERING LOGIC END ---
+
   return reply.send({
     success: true,
     data: {
-      transactions: transactions.map((tx) => ({
+      // Map the FILTERED transactions, not the original list
+      transactions: visibleTransactions.map((tx) => ({
         id: tx.id,
         type: tx.senderId === user.id ? "SENT" : "RECEIVED",
         counterparty:
