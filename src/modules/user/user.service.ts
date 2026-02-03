@@ -24,37 +24,35 @@ export class UserService {
     email: string;
     handle?: string;
   }): Promise<User> {
-    const { keycloakId, email, handle } = params;
+    const { keycloakId, email } = params;
 
-    // Check if user exists
-    let user = await prisma.user.findUnique({
+    let handle = params.handle ?? this.generateHandleFromEmail(email);
+
+    const user = await prisma.user.findUnique({
       where: { keycloakId },
       include: { wallet: true },
     });
 
-    if (user) {
-      return user;
+    if (user) return user;
+
+    while (true) {
+      try {
+        return await this.createUserWithWallet({
+          keycloakId,
+          email,
+          handle,
+        });
+      } catch (error: any) {
+        if (error.code === "P2002" && error.meta?.target?.includes("handle")) {
+          // regenerate handle and retry
+          handle = `${this.generateHandleFromEmail(email)}_${Math.random()
+            .toString(36)
+            .substring(2, 8)}`;
+          continue;
+        }
+        throw error;
+      }
     }
-
-    // Generate handle if not provided
-    const userHandle = handle || this.generateHandleFromEmail(email);
-
-    // Check if handle is taken
-    const existingHandle = await prisma.user.findUnique({
-      where: { handle: userHandle },
-    });
-
-    if (existingHandle) {
-      // Auto-append random suffix
-      const randomHandle = `${userHandle}_${Math.random().toString(36).substring(2, 8)}`;
-      return this.createUserWithWallet({
-        keycloakId,
-        email,
-        handle: randomHandle,
-      });
-    }
-
-    return this.createUserWithWallet({ keycloakId, email, handle: userHandle });
   }
 
   /**
