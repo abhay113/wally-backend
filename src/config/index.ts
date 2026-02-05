@@ -27,6 +27,7 @@ export const config = {
     horizonUrl:
       process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org",
     friendbotUrl: "https://friendbot.stellar.org",
+    newUserStartingBalance: process.env.NEW_USER_STARTING_BALANCE || "1",
   },
 
   keycloak: {
@@ -40,6 +41,15 @@ export const config = {
 
   encryption: {
     walletKey: process.env.WALLET_ENCRYPTION_KEY!,
+  },
+
+  vault: {
+    address: process.env.VAULT_ADDR,
+    token: process.env.VAULT_TOKEN,
+    masterSecretPath:
+      process.env.VAULT_MASTER_SECRET_PATH || "secret/data/wally",
+    masterSecretKeyField:
+      process.env.MASTER_SECRET_KEY_FIELD || "MASTER_SECRET_KEY",
   },
 
   limits: {
