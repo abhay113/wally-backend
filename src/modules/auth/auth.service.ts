@@ -43,7 +43,7 @@ export class AuthService {
   /**
    * Register a new user in Keycloak and our database
    */
-  async register(params: {
+  async registerUser(params: {
     email: string;
     password: string;
     handle: string;
