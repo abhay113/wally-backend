@@ -11,6 +11,8 @@ import {
 
 import { config } from "../../config";
 import { StellarError } from "../../utils/errors";
+import logger from "../../utils/logger";
+import { getMasterKeyFromVault } from "../../utils/vault";
 
 export class StellarService {
   private server: Horizon.Server; // Explicitly typed for Horizon
@@ -38,30 +40,34 @@ export class StellarService {
   }
 
   /**
-   * Funds an account using Friendbot (testnet only)
+   * @deprecated Use activateAccount for new user onboarding.
+   * This method relies on the public Friendbot and is not scalable.
    */
-  async fundWithFriendbot(publicKey: string): Promise<void> {
-    if (config.stellar.network !== "testnet") {
-      throw new StellarError("Friendbot only available on testnet");
-    }
+  // async fundWithFriendbot(publicKey: string): Promise<void> {
+  //   if (config.stellar.network !== "testnet") {
+  //     throw new StellarError("Friendbot only available on testnet");
+  //   }
 
-    try {
-      const response = await fetch(
-        `${config.stellar.friendbotUrl}?addr=${encodeURIComponent(publicKey)}`,
-      );
+  //   try {
+  //     const response = await fetch(
+  //       `${config.stellar.friendbotUrl}?addr=${encodeURIComponent(publicKey)}`,
+  //     );
 
-      console.log("response from stellar service Api",response);
-      if (!response.ok) {
-        throw new StellarError(
-          `Friendbot funding failed: ${response.statusText}`,
-        );
-      }
-    } catch (error) {
-      throw new StellarError("Failed to fund account with Friendbot getting from stellar service", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
+  //     console.log("response from stellar service Api", response);
+  //     if (!response.ok) {
+  //       throw new StellarError(
+  //         `Friendbot funding failed: ${response.statusText}`,
+  //       );
+  //     }
+  //   } catch (error) {
+  //     throw new StellarError(
+  //       "Failed to fund account with Friendbot getting from stellar service",
+  //       {
+  //         error: error instanceof Error ? error.message : String(error),
+  //       },
+  //     );
+  //   }
+  // }
 
   /**
    * Gets account balance in XLM
@@ -160,6 +166,55 @@ export class StellarService {
       });
 
     return closeStream;
+  }
+
+  /**
+   * Activates a new Stellar account by funding it from the master account.
+   * This is the new standard for user wallet creation.
+   * @param destinationPublicKey The public key of the new account to activate.
+   */
+  async activateAccount(destinationPublicKey: string): Promise<void> {
+    logger.info(`Activating new account: ${destinationPublicKey}`);
+    try {
+      const masterSecret = await getMasterKeyFromVault();
+      const masterKeypair = Keypair.fromSecret(masterSecret);
+      const sourcePublicKey = masterKeypair.publicKey();
+
+      const sourceAccount = await this.server.loadAccount(sourcePublicKey);
+
+      const transaction = new TransactionBuilder(sourceAccount, {
+        fee: await this.server.fetchBaseFee().then((fee) => fee.toString()),
+        networkPassphrase:
+          config.stellar.network === "testnet"
+            ? "Test SDF Network ; September 2015"
+            : "Public Global Stellar Network ; September 2015",
+      })
+        .addOperation(
+          Operation.createAccount({
+            destination: destinationPublicKey,
+            startingBalance: config.stellar.newUserStartingBalance,
+          }),
+        )
+        .setTimeout(30)
+        .build();
+
+      transaction.sign(masterKeypair);
+
+      const result = await this.server.submitTransaction(transaction);
+      logger.info(
+        `Successfully activated account ${destinationPublicKey} in transaction: ${result.hash}`,
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `Failed to activate account ${destinationPublicKey}. Error: ${errorMessage}`,
+      );
+
+      throw new StellarError("Failed to activate account on Stellar network.", {
+        error: errorMessage,
+      });
+    }
   }
 }
 

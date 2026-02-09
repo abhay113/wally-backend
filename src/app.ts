@@ -89,7 +89,7 @@ async function registerRoutes() {
 
   fastify.register(
     async (auth) => {
-      auth.post("/register", authController.register);
+      auth.post("/register", authController.registerUser);
       auth.post("/login", authController.login);
       auth.post("/refresh", authController.refreshToken);
       auth.post("/logout", authController.logout);

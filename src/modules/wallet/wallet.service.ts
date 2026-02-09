@@ -1,14 +1,7 @@
 import { Wallet, WalletStatus, Prisma } from "../../generated/client";
 import { stellarService } from "../stellar/stellar.service";
 import { encryptSecretKey, decryptSecretKey } from "./wallet.crypto";
-import {
-  NotFoundError,
-  WalletFrozenError,
-  RateLimitExceededError,
-  LimitExceededError,
-  InternalServerError,
-} from "../../utils/errors";
-import { config } from "../../config";
+import { NotFoundError } from "../../utils/errors";
 
 import { prisma } from "../../utils/prisma";
 
@@ -85,82 +78,82 @@ export class WalletService {
    * Fund wallet using Friendbot (testnet only)
    * Enforces rate limits and daily caps
    */
-  async fundWallet(userId: string): Promise<{
-    success: boolean;
-    balance: string;
-    message: string;
-  }> {
-    const wallet = await this.getWalletByUserId(userId);
+  // async fundWallet(userId: string): Promise<{
+  //   success: boolean;
+  //   balance: string;
+  //   message: string;
+  // }> {
+  //   const wallet = await this.getWalletByUserId(userId);
 
-    // Check if wallet is frozen
-    if (wallet.status === "FROZEN") {
-      throw new WalletFrozenError(wallet.id);
-    }
+  //   // Check if wallet is frozen
+  //   if (wallet.status === "FROZEN") {
+  //     throw new WalletFrozenError(wallet.id);
+  //   }
 
-    // Check rate limit (max 3 fundings per day)
-    const now = new Date();
-    const lastResetDate = new Date(wallet.lastResetDate);
-    const daysDiff = Math.floor(
-      (now.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24),
-    );
+  //   // Check rate limit (max 3 fundings per day)
+  //   const now = new Date();
+  //   const lastResetDate = new Date(wallet.lastResetDate);
+  //   const daysDiff = Math.floor(
+  //     (now.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24),
+  //   );
 
-    let fundingCount = wallet.fundingCount;
-    let dailyFundingSum = parseFloat(wallet.dailyFundingSum.toString());
+  //   let fundingCount = wallet.fundingCount;
+  //   let dailyFundingSum = parseFloat(wallet.dailyFundingSum.toString());
 
-    // Reset daily counters if it's a new day
-    if (daysDiff >= 1) {
-      fundingCount = 0;
-      dailyFundingSum = 0;
-    }
+  //   // Reset daily counters if it's a new day
+  //   if (daysDiff >= 1) {
+  //     fundingCount = 0;
+  //     dailyFundingSum = 0;
+  //   }
 
-    // Check rate limit
-    if (fundingCount >= config.limits.funding.rateLimitMax) {
-      throw new RateLimitExceededError(
-        `Maximum ${config.limits.funding.rateLimitMax} fundings per day exceeded`,
-      );
-    }
+  //   // Check rate limit
+  //   if (fundingCount >= config.limits.funding.rateLimitMax) {
+  //     throw new RateLimitExceededError(
+  //       `Maximum ${config.limits.funding.rateLimitMax} fundings per day exceeded`,
+  //     );
+  //   }
 
-    // Check daily cap (10,000 XLM default)
-    const friendbotAmount = 10000; // Friendbot gives 10,000 XLM
-    if (dailyFundingSum + friendbotAmount > config.limits.funding.dailyCapXlm) {
-      throw new LimitExceededError(
-        `Daily funding cap of ${config.limits.funding.dailyCapXlm} XLM exceeded`,
-      );
-    }
+  //   // Check daily cap (10,000 XLM default)
+  //   const friendbotAmount = 10000; // Friendbot gives 10,000 XLM
+  //   if (dailyFundingSum + friendbotAmount > config.limits.funding.dailyCapXlm) {
+  //     throw new LimitExceededError(
+  //       `Daily funding cap of ${config.limits.funding.dailyCapXlm} XLM exceeded`,
+  //     );
+  //   }
 
-    try {
-      // Fund with Friendbot
-      await stellarService.fundWithFriendbot(wallet.stellarPublicKey);
+  //   try {
+  //     // Fund with Friendbot
+  //     await stellarService.fundWithFriendbot(wallet.stellarPublicKey);
 
-      // Wait a bit for the transaction to be processed
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+  //     // Wait a bit for the transaction to be processed
+  //     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Get updated balance
-      const balance = await stellarService.getBalance(wallet.stellarPublicKey);
+  //     // Get updated balance
+  //     const balance = await stellarService.getBalance(wallet.stellarPublicKey);
 
-      // Update wallet
-      await prisma.wallet.update({
-        where: { id: wallet.id },
-        data: {
-          balance: parseFloat(balance),
-          lastFundedAt: now,
-          fundingCount: fundingCount + 1,
-          dailyFundingSum: dailyFundingSum + friendbotAmount,
-          lastResetDate: daysDiff >= 1 ? now : wallet.lastResetDate,
-        },
-      });
+  //     // Update wallet
+  //     await prisma.wallet.update({
+  //       where: { id: wallet.id },
+  //       data: {
+  //         balance: parseFloat(balance),
+  //         lastFundedAt: now,
+  //         fundingCount: fundingCount + 1,
+  //         dailyFundingSum: dailyFundingSum + friendbotAmount,
+  //         lastResetDate: daysDiff >= 1 ? now : wallet.lastResetDate,
+  //       },
+  //     });
 
-      return {
-        success: true,
-        balance,
-        message: "Wallet funded successfully",
-      };
-    } catch (error) {
-      throw new InternalServerError("Failed to fund wallet", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
+  //     return {
+  //       success: true,
+  //       balance,
+  //       message: "Wallet funded successfully",
+  //     };
+  //   } catch (error) {
+  //     throw new InternalServerError("Failed to fund wallet", {
+  //       error: error instanceof Error ? error.message : String(error),
+  //     });
+  //   }
+  // }
 
   /**
    * Sync wallet balance with Stellar network

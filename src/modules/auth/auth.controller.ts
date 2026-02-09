@@ -8,6 +8,7 @@ const authService = new AuthService();
 // Zod schemas for validation
 const registerSchema = z.object({
   email: z.string().email("Invalid email format"),
+
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -15,6 +16,7 @@ const registerSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       "Password must contain at least one uppercase letter, one lowercase letter, and one number",
     ),
+
   handle: z
     .string()
     .min(3, "Handle must be at least 3 characters")
@@ -23,6 +25,18 @@ const registerSchema = z.object({
       /^[a-z0-9_]+$/i,
       "Handle can only contain letters, numbers, and underscores",
     ),
+
+  firstName: z
+    .string()
+    .min(1, "First name cannot be empty")
+    .max(50, "First name is too long")
+    .optional(),
+
+  lastName: z
+    .string()
+    .min(1, "Last name cannot be empty")
+    .max(50, "Last name is too long")
+    .optional(),
 });
 
 const loginSchema = z.object({
@@ -42,7 +56,7 @@ const logoutSchema = z.object({
  * Register a new user
  * PUBLIC endpoint - no authentication required
  */
-export async function register(
+export async function registerUser(
   request: FastifyRequest<{
     Body: {
       email: string;
@@ -61,8 +75,9 @@ export async function register(
       errors: result.error.issues,
     });
   }
-
-  const response = await authService.register(result.data);
+  console.log("REQUEST BODY:", request.body);
+  console.log("PARSED DATA:", result.data);
+  const response = await authService.registerUser(result.data);
 
   return reply.code(201).send(response);
 }
