@@ -2,7 +2,7 @@
  * Wallet-related type definitions
  */
 
-import { WalletStatus } from "@prisma/client";
+import { WalletStatus } from "../generated/client";
 
 /**
  * Wallet balance information

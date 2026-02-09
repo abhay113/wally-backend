@@ -2,7 +2,7 @@
  * Transaction-related type definitions
  */
 
-import { TransactionStatus, TransactionType } from "@prisma/client";
+import { TransactionStatus, TransactionType } from "../generated/client";
 
 /**
  * Transaction creation parameters

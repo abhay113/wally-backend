@@ -1,5 +1,5 @@
 import { Worker, Job } from "bullmq";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from  "../generated/client";
 import { redisConnection } from "../config/redis";
 import { config } from "../config";
 import { stellarService } from "../modules/stellar/stellar.service";
