@@ -47,3 +47,6 @@ coverage/
 /src/generated/prisma
 
 API.md
+
+.idx
+dev.nix

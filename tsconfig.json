@@ -22,7 +22,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "src/generated/client"
   ],
   "exclude": [
     "node_modules",
