@@ -28,18 +28,18 @@ export async function getBalance(request: FastifyRequest, reply: FastifyReply) {
 /**
  * Fund wallet using Friendbot (testnet only)
  */
-export async function fundWallet(request: FastifyRequest, reply: FastifyReply) {
-  const user = await userService.getUserByKeycloakId(request.user.keycloakId);
-  const result = await walletService.fundWallet(user.id);
+// export async function fundWallet(request: FastifyRequest, reply: FastifyReply) {
+//   const user = await userService.getUserByKeycloakId(request.user.keycloakId);
+//   const result = await walletService.fundWallet(user.id);
 
-  return reply.send({
-    success: true,
-    data: {
-      balance: result.balance,
-      message: result.message,
-    },
-  });
-}
+//   return reply.send({
+//     success: true,
+//     data: {
+//       balance: result.balance,
+//       message: result.message,
+//     },
+//   });
+// }
 
 /**
  * Sync wallet balance with Stellar network

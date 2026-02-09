@@ -120,7 +120,7 @@ async function registerRoutes() {
           walletRoutes.addHook("onRequest", requireAuth);
 
           walletRoutes.get("/balance", walletController.getBalance);
-          walletRoutes.post("/fund", walletController.fundWallet);
+          // walletRoutes.post("/fund", walletController.fundWallet);
           walletRoutes.post("/sync", walletController.syncBalance);
         },
         { prefix: "/wallet" },
