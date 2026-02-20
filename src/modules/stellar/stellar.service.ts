@@ -70,6 +70,63 @@ export class StellarService {
   // }
 
   /**
+ * Funds an existing activated account from the master account.
+ * Use this to top-up user wallets (not for initial activation).
+ */
+  async fundAccount(
+    destinationPublicKey: string,
+    amount: string,
+  ): Promise<{ hash: string; ledger: number }> {
+    logger.info(
+      `Funding account ${destinationPublicKey} with ${amount} XLM from master`,
+    );
+    try {
+      const masterSecret = await getMasterKeyFromVault();
+      const masterKeypair = Keypair.fromSecret(masterSecret);
+      const sourcePublicKey = masterKeypair.publicKey();
+
+      const sourceAccount = await this.server.loadAccount(sourcePublicKey);
+
+      const transaction = new TransactionBuilder(sourceAccount, {
+        fee: await this.server.fetchBaseFee().then((fee) => fee.toString()),
+        networkPassphrase: this.networkPassphrase,
+      })
+        .addOperation(
+          Operation.payment({
+            destination: destinationPublicKey,
+            asset: Asset.native(),
+            amount: amount,
+          }),
+        )
+        .setTimeout(30)
+        .build();
+
+      transaction.sign(masterKeypair);
+
+      const result = await this.server.submitTransaction(transaction);
+
+      logger.info(
+        `Successfully funded account ${destinationPublicKey} with ${amount} XLM. Tx: ${result.hash}`,
+      );
+
+      return {
+        hash: result.hash,
+        ledger: result.ledger,
+      };
+    } catch (error: any) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `Failed to fund account ${destinationPublicKey}. Error: ${errorMessage}`,
+      );
+      const detail =
+        error.response?.data?.extras?.result_codes?.operations?.[0] ||
+        errorMessage;
+      throw new StellarError(`Failed to fund account: ${detail}`);
+    }
+  }
+
+  /**
    * Gets account balance in XLM
    */
   async getBalance(publicKey: string): Promise<string> {

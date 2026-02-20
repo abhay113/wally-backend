@@ -1,9 +1,10 @@
 import { Wallet, WalletStatus, Prisma } from "../../generated/client";
 import { stellarService } from "../stellar/stellar.service";
 import { encryptSecretKey, decryptSecretKey } from "./wallet.crypto";
-import { NotFoundError } from "../../utils/errors";
+import { InternalServerError, LimitExceededError, NotFoundError, RateLimitExceededError, WalletFrozenError } from "../../utils/errors";
 
 import { prisma } from "../../utils/prisma";
+import { config } from "../../config";
 
 export class WalletService {
   /**
@@ -155,6 +156,96 @@ export class WalletService {
   //   }
   // }
 
+  /**
+ * Fund wallet from master account
+ * Enforces rate limits and daily caps
+ */
+  async fundWallet(
+    userId: string,
+    amount?: string,
+  ): Promise<{
+    success: boolean;
+    balance: string;
+    hash: string;
+    message: string;
+  }> {
+    const wallet = await this.getWalletByUserId(userId);
+
+    // Check if wallet is frozen
+    if (wallet.status === "FROZEN") {
+      throw new WalletFrozenError(wallet.id);
+    }
+
+    const fundAmount = amount || config.limits.funding.dailyCapXlm.toString(); // Default to daily cap if no amount provided
+
+    // Check rate limit (max N fundings per day)
+    const now = new Date();
+    const lastResetDate = new Date(wallet.lastResetDate);
+    const daysDiff = Math.floor(
+      (now.getTime() - lastResetDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    let fundingCount = wallet.fundingCount;
+    let dailyFundingSum = parseFloat(wallet.dailyFundingSum.toString());
+
+    // Reset daily counters if it's a new day
+    if (daysDiff >= 1) {
+      fundingCount = 0;
+      dailyFundingSum = 0;
+    }
+
+    // Check rate limit
+    if (fundingCount >= config.limits.funding.rateLimitMax) {
+      throw new RateLimitExceededError(
+        `Maximum ${config.limits.funding.rateLimitMax} fundings per day exceeded`,
+      );
+    }
+
+    // Check daily cap
+    const requestedAmount = parseFloat(fundAmount);
+    if (dailyFundingSum + requestedAmount > config.limits.funding.dailyCapXlm) {
+      throw new LimitExceededError(
+        `Daily funding cap of ${config.limits.funding.dailyCapXlm} XLM exceeded`,
+      );
+    }
+
+    try {
+      // Fund from master account
+      const { hash } = await stellarService.fundAccount(
+        wallet.stellarPublicKey,
+        fundAmount,
+      );
+
+      // Wait briefly for the transaction to settle
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Fetch updated balance from Stellar
+      const balance = await stellarService.getBalance(wallet.stellarPublicKey);
+
+      // Persist updated wallet state
+      await prisma.wallet.update({
+        where: { id: wallet.id },
+        data: {
+          balance: parseFloat(balance),
+          lastFundedAt: now,
+          fundingCount: fundingCount + 1,
+          dailyFundingSum: dailyFundingSum + requestedAmount,
+          lastResetDate: daysDiff >= 1 ? now : wallet.lastResetDate,
+        },
+      });
+
+      return {
+        success: true,
+        balance,
+        hash,
+        message: `Successfully funded wallet with ${fundAmount} XLM`,
+      };
+    } catch (error) {
+      throw new InternalServerError("Failed to fund wallet", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
   /**
    * Sync wallet balance with Stellar network
    */
