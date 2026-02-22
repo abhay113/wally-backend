@@ -21,12 +21,12 @@ const fastify = Fastify({
     level: config.isDevelopment ? "debug" : "info",
     transport: config.isDevelopment
       ? {
-          target: "pino-pretty",
-          options: {
-            translateTime: "HH:MM:ss Z",
-            ignore: "pid,hostname",
-          },
-        }
+        target: "pino-pretty",
+        options: {
+          translateTime: "HH:MM:ss Z",
+          ignore: "pid,hostname",
+        },
+      }
       : undefined,
   },
 });
@@ -120,7 +120,8 @@ async function registerRoutes() {
           walletRoutes.addHook("onRequest", requireAuth);
 
           walletRoutes.get("/balance", walletController.getBalance);
-          // walletRoutes.post("/fund", walletController.fundWallet);
+          // walletRoutes.post("/fund", walletController.fundWallet);// Fund wallet using Friendbot (testnet only)
+          walletRoutes.post("/fund", walletController.fundWallet);
           walletRoutes.post("/sync", walletController.syncBalance);
         },
         { prefix: "/wallet" },

@@ -42,6 +42,24 @@ export async function getBalance(request: FastifyRequest, reply: FastifyReply) {
 // }
 
 /**
+ * Fund wallet from master account
+ */
+export async function fundWallet(request: FastifyRequest, reply: FastifyReply) {
+  const { amount } = (request.body as { amount?: string }) || {};
+  const user = await userService.getUserByKeycloakId(request.user.keycloakId);
+  const result = await walletService.fundWallet(user.id, amount);
+
+  return reply.send({
+    success: true,
+    data: {
+      balance: result.balance,
+      transactionHash: result.hash,
+      message: result.message,
+    },
+  });
+}
+
+/**
  * Sync wallet balance with Stellar network
  */
 export async function syncBalance(
